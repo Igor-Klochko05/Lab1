@@ -1,21 +1,38 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from sklearn.cluster import KMeans
+from sklearn.cluster import KMeans, estimate_bandwidth
+from sklearn.cluster import MeanShift
 from sklearn.metrics import silhouette_score
 
-# Припустимо, що дані у файлі записані через кому (CSV)
 data = np.loadtxt('lab1.txt', delimiter=',')
 
 # Метод зсуву середнього для визначення кількості кластерів
-def elbow_method(data):
-    distortions = []
-    K_range = range(2, 16)
+def meanshift(data):
+    def meanshift(data):
+        bandwidth_data = estimate_bandwidth(data, quantile=0.14, n_samples=len(data))
 
-    for k in K_range:
-        kmeans = KMeans(n_clusters=k)
-        kmeans.fit(data)
-        distortions.append(kmeans.inertia_)
+        meanshift_model = MeanShift(bandwidth=bandwidth_data, bin_seeding=True)
+        meanshift_model.fit(data)
 
+        cluster_centers = meanshift_model.cluster_centers_
+        print('\nCenters of clusters:\n', cluster_centers)
+
+        # calculating clusters
+        labels = meanshift_model.labels_
+        num_clusters = len(np.unique(labels))
+        print("\nNumbers of clusters in input data =", num_clusters)
+
+        plt.figure()
+        markers = 'o*xvs+p'
+        for i, marker in zip(range(num_clusters), markers):
+            plt.scatter(data[labels == i, 0], data[labels == i, 1], marker=marker, color='black')
+
+            cluster_center = cluster_centers[i]
+            plt.plot(cluster_center[0], cluster_center[1], marker=marker, markerfacecolor='black',
+                     markeredgecolor='black', markersize=15)
+
+        plt.title('Centers of clusters')
+        plt.show()
 
 
 # Оцінка кластеризації за допомогою silhouette_score
@@ -75,7 +92,7 @@ def plot_clusters(data, n_clusters):
     plt.show()
 
 # Застосуємо метод зсуву середнього для визначення кількості кластерів
-elbow_method(data)
+meanshift(data)
 
 # Знайдемо оптимальну кількість кластерів за допомогою silhouette_score
 optimal_clusters = find_optimal_clusters(data)
